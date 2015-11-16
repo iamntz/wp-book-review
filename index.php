@@ -2,15 +2,31 @@
 
 /*
 Plugin Name: Book Review
-Description: Add a book review box at the end of a post and/or on a sidebar
 Author: Ionuț Staicu
 Version: 1.0.0
-*/
+ */
 
 if (!defined('ABSPATH')) {
-  exit;
+	exit;
 }
 
 add_action('plugins_loaded', function () {
-  load_plugin_textdomain('book-review', false, dirname(plugin_basename(__FILE__)) . '/lang');
+	load_plugin_textdomain('book-review', false, dirname(plugin_basename(__FILE__)) . '/lang');
+});
+
+define('BOOK_POST_TYPE', 'book');
+
+define('BOOK_TAX_GENRE', 'book_genre');
+define('BOOK_TAX_AUTHOR', 'book_author');
+define('BOOK_TAX_PUBLISHER', 'book_publisher');
+
+require_once 'inc/bookReview/PostTypes.php';
+
+add_action('init', function () {
+	new bookReview\PostTypes;
+});
+
+register_activation_hook(__FILE__, function () {
+	new bookReview\PostTypes;
+	flush_rewrite_rules();
 });

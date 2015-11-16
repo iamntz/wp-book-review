@@ -62,6 +62,8 @@ Facem o paranteză la traduceri pentru a menționa un lucru important ce poate s
 
 Pentru că vrem ca plugin-ul să fie ușor de tradus de oricine, vom folosi doar texte în limba engleză. Pentru traducere poți folosi [Poeditor](https://poeditor.com) (web) sau [Poedit](https://poedit.net/) (stand alone; versiunea gratuită funcționează foarte bine cu pattern-urile menționate [aici](http://www.cssigniter.com/ignite/wordpress-poedit-translation-secrets/))
 
+Poți citi mai multe despre localizări [aici](https://codex.wordpress.org/Function_Reference/load_plugin_textdomain)
+
 ### Încărcarea fișierelor
 
 Pentru a include fișierele necesare, avem două posibilități: ori folosim un autoloader ori le includem manual. Pentru că vor fi doar câteva, nu are rost să ne complicăm, deci vom recurge la clasicul `require`.
@@ -77,3 +79,175 @@ git add .
 git commit -am "Initial commit"
 ```
 
+
+## Taxonomii și Post Types
+
+Prima idee avută de mine a fost să țin totul în meta data, dar mi-am dat seama că unele informații se pot repeta: editură, autor sau genul cărții. În plus, aș fi limitat la altele: de exemplu n-aș putea afișa foarte ușor o arhivă cu toate cărțile citite sau nu aș putea afișa un widget.
+
+Prin urmare, folosim un post type pentru cărți numit `books` și taxonomii pentru editură, autor și gen. Restul de informații (anul apariției, ISBN, imagine etc) sunt destul de specifice fiecărei publicații. Anul ar putea fi pus într-o taxonomie, dar consider că ar încărca prea mult UI-ul și ar face mai dificilă o filtrare a publicațiilor apărute între două date.
+
+Pentru că vom folosi numele taxonomiilor în mai multe locuri, vom defini constante:
+
+```php
+//index.php
+
+define('BOOK_POST_TYPE', 'book');
+
+define('BOOK_TAX_GENRE', 'book_genre');
+define('BOOK_TAX_AUTHOR', 'book_author');
+define('BOOK_TAX_PUBLISHER', 'book_publisher');
+```
+
+Apoi le înregistrăm. Practic tot codul de mai jos este exemplul din [documentație](https://codex.wordpress.org/Function_Reference/register_post_type):
+
+```php
+//inc/bookReview/PostTypes.php
+
+<?php
+
+namespace bookReview;
+
+class PostTypes
+{
+  public function __construct()
+  {
+    $this->registerPostType();
+    $this->registerGenre();
+    $this->registerAuthor();
+    $this->registerPublisher();
+  }
+
+  protected function registerPostType()
+  {
+    $labels = array(
+      'name' => _x('Books', 'post type general name'),
+      'singular_name' => _x('Book', 'post type singular name'),
+      'menu_name' => _x('Books', 'admin menu'),
+      'name_admin_bar' => _x('Book', 'add new on admin bar'),
+      'add_new' => _x('Add New', 'book'),
+      'add_new_item' => __('Add New Book'),
+      'new_item' => __('New Book'),
+      'edit_item' => __('Edit Book'),
+      'view_item' => __('View Book'),
+      'all_items' => __('All Books'),
+      'search_items' => __('Search Books'),
+      'parent_item_colon' => __('Parent Books:'),
+      'not_found' => __('No books found.'),
+      'not_found_in_trash' => __('No books found in Trash.'),
+    );
+
+    $args = array(
+      'labels' => $labels,
+      'public' => true,
+      'publicly_queryable' => true,
+      'show_ui' => true,
+      'show_in_menu' => true,
+      'query_var' => true,
+      'rewrite' => array('slug' => 'book'),
+      'capability_type' => 'post',
+      'has_archive' => true,
+      'hierarchical' => false,
+      'supports' => array('title', 'editor', 'author', 'thumbnail'),
+    );
+
+    register_post_type(BOOK_POST_TYPE, $args);
+  }
+
+  protected function registerGenre()
+  {
+    $this->registerTaxonomy(array(
+      'singular' => _x('Genre', 'taxonomy general name'),
+      'plural' => _x('Genre', 'taxonomy general name'),
+      'taxonomy' => BOOK_TAX_GENRE,
+      'isHierarchical' => true,
+    ));
+  }
+
+  protected function registerAuthor()
+  {
+
+    $this->registerTaxonomy(array(
+      'singular' => _x('Writer', 'taxonomy general name'),
+      'plural' => _x('Writers', 'taxonomy general name'),
+      'taxonomy' => BOOK_TAX_AUTHOR,
+      'isHierarchical' => false,
+    ));
+  }
+
+  protected function registerPublisher()
+  {
+    $this->registerTaxonomy(array(
+      'singular' => _x('Publisher', 'taxonomy general name'),
+      'plural' => _x('Publishers', 'taxonomy general name'),
+      'taxonomy' => BOOK_TAX_PUBLISHER,
+      'isHierarchical' => false,
+    ));
+  }
+
+  protected function registerTaxonomy($options)
+  {
+    $labels = array(
+      'name' => $options['plural'],
+      'singular_name' => $options['singular'],
+      'search_items' => sprintf(__('Search %s'), $options['plural']),
+      'all_items' => sprintf(__('All %s'), $options['plural']),
+      'parent_item' => sprintf(__('Parent %s'), $options['singular']),
+      'parent_item_colon' => sprintf(__('Parent %s:'), $options['singular']),
+      'edit_item' => sprintf(__('Edit %s'), $options['singular']),
+      'update_item' => sprintf(__('Update %s'), $options['singular']),
+      'add_new_item' => sprintf(__('Add New %s'), $options['singular']),
+      'new_item_name' => sprintf(__('New %s Name'), $options['singular']),
+      'menu_name' => sprintf(__('%s'), $options['singular']),
+
+      'popular_items' => sprintf(__('Popular %s'), $options['plural']),
+      'separate_items_with_commas' => sprintf(__('Separate %s with commas'), $options['plural']),
+      'add_or_remove_items' => sprintf(__('Add or remove %s'), $options['plural']),
+      'choose_from_most_used' => sprintf(__('Choose from the most used %s'), $options['plural']),
+      'not_found' => sprintf(__('No %s found.'), $options['plural']),
+    );
+
+    $args = array(
+      'hierarchical' => $options['isHierarchical'],
+      'labels' => $labels,
+      'show_ui' => true,
+      'show_admin_column' => true,
+      'query_var' => true,
+      'rewrite' => array('slug' => $options['slug']),
+    );
+
+    register_taxonomy($options['taxonomy'], BOOK_POST_TYPE, $args);
+  }
+}
+```
+
+Pentru că avem trei taxonomii ce au aceleași proprietăți, am făcut o metodă specială pentru a evita codul duplicat.
+
+Genul cărții ne va permite să avem cărțile organizate într-o structură ierarhică (IT/Programare/Web/PHP). La autor și la editor nu este nevoie de așa ceva.
+
+În `index.php` va trebui să includem clasa și să o instanțiem:
+
+```php
+//index.php
+
+require_once 'inc/bookReview/PostTypes.php';
+
+add_action('init', function () {
+  new bookReview\PostTypes;
+});
+
+register_activation_hook(__FILE__, function () {
+  new bookReview\PostTypes;
+  flush_rewrite_rules();
+});
+```
+
+A doua instanțiere a clasei `PostTypes` se face pentru a permite rescrierea permalinks. Detalii [aici](https://codex.wordpress.org/Function_Reference/register_activation_hook)
+
+#### Git
+
+Facem commit:
+
+```
+git add .
+git commit -am "Added post types & taxonomies"
+```
