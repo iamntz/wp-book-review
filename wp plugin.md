@@ -285,7 +285,16 @@ class Metabox
     wp_nonce_field('book-review-nonce', 'book-review-nonce');
     do_action('book-review/metabox/before-fields', $post);
 
+    echo $this->addFields($post);
+
     do_action('book-review/metabox/after-fields', $post);
+  }
+
+  protected function addFields($post)
+  {
+    $fields = '';
+
+    return $fields;
   }
 
   public function saveMeta($post_id)
@@ -308,9 +317,14 @@ class Metabox
       }
     }
 
-    //  TODO: add fields
+    $this->saveFields($post_id);
 
     do_action('book-review/metabox/save', $post_id);
+  }
+
+  protected function saveFields($postID)
+  {
+
   }
 }
 ```
@@ -322,4 +336,58 @@ Facem o clasă ce adaugă un metabox pentru CPT-ul nostru, adaugă nonce-ul și 
 ```
 git add .
 git commit -am "Added metabox skeleton"
+```
+
+
+### Câmpurile din Metabox
+
+Pentru că o să tot adăugăm câmpuri, vom adăuga întâi o metodă ce ne va ajuta să generăm `input`-uri și `textarea` foarte ușor:
+
+```php
+// inc/bookReview/Metabox.php
+
+protected function getTextField($postID, $name, $label, $textarea = false)
+{
+  $value = get_post_meta($postID, $name, true);
+
+  if ($textarea) {
+    $field = sprintf('<textarea name="%2$s" id="%2$s" class="widefat">%1$s</textarea>', esc_textarea($value), $name );
+  } else {
+    $field = sprintf('<input type="text" name="%2$s" id="%2$s" value="%1$s" class="widefat">', esc_attr($value), $name );
+  }
+
+  return sprintf('<p><label for="%s">%s: %s</label></p>', $name, $label, $field);
+}
+```
+
+După care vom adăuga field-urile în metoda `addFields`:
+
+
+```php
+// inc/bookReview/Metabox.php @ addFields
+$fields .= $this->getTextField($post->ID, '_isbn', __('ISBN'));
+$fields .= $this->getTextField($post->ID, '_publish_year', __('Publish Year'));
+$fields .= $this->getTextField($post->ID, '_buy_book', __('Buying Links'), true);
+
+```
+
+Evident, nu ar trebui să uităm să adăugăm numele în metoda `saveFields`!:
+
+```php
+// inc/bookReview/Metabox.php @ saveFields
+update_post_meta($postID, '_isbn', sanitize_text_field($_POST['_isbn']));
+update_post_meta($postID, '_publish_year', sanitize_text_field($_POST['_publish_year']));
+
+update_post_meta($postID, '_buy_book', wp_kses($_POST['_buy_book']));
+```
+
+#### Ce nume folosești pentru metafields?
+
+Probabil ai observat un underscore în fața fiecărui nume al field-urilor. Este așa deoarece nu vrem ca aceste meta data să fie vizibile sau editabile în afara plugin-ului (detalii [aici](https://codex.wordpress.org/Function_Reference/add_post_meta#Hidden_Custom_Fields)).
+
+#### Git
+
+```
+git add .
+git commit -am "Added basic meta fields"
 ```
