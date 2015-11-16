@@ -18,9 +18,16 @@ Ai putea învăța să lucrezi cu:
 - post metaboxes;
 - actions & filters;
 - media uploader;
-- ajax în WordPress
+- ajax în WordPress;
+- localizarea plugin-urilor;
+- shortcodes
+- Git
 
 -----------------
+
+## Notă de început
+
+Trebuie să menționez că o bună parte din cod este luat direct din [Codex-ul WordPress](http://codex.wordpress.org/Main_Page). Scopul acestui articol nu este acela de a-ți oferi cod complet original ci acela de a-ți arăta un mod de lucru: ce să folosești, unde să cauți, cum să organizezi codul, cum să folosești clase șamd.
 
 ## Primii Pași
 
