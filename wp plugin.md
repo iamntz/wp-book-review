@@ -1,33 +1,15 @@
-Zilele astea am zis că ar fi cazul să-mi organizez într-un fel cărțile citite de care tot scriu pe blog. Cum GoodReads nu-mi se pare potrivit, am zis că ori pot folosi un plugin gata făcut ori pot face un tutorial despre cum fac pluginul. Prin urmare...
+Introducerea a fost [aici](https://devforum.ro/t/un-tutorial-de-plugin-pentru-wp/2230).
 
-### Ce aș vrea să facă plugin-ul?
-
-1. Afișarea unui Metabox ce va permite introducerea diverselor informații pentru o carte: tilu, isbn, imagine, editură, autor, stadiul curent (de citit, în curs de citire, citită) etc;
-2. Widget ce permite afișarea cărților citite/de citit;
-3. (probabil) să facă fetch automat de pe un API extern după ISBN;
-4. Permite adăugarea de link-uri de unde poți cumpăra cartea.
-5. Listarea unei arhive de cărți
-
-### Ce ai putea învăța?
-
-Ai putea învăța să lucrezi cu:
-
-- custom post types;
-- custom taxonomies;
-- custom widgets;
-- post metaboxes;
-- actions & filters;
-- media uploader;
-- ajax în WordPress;
-- localizarea plugin-urilor;
-- shortcodes
-- Git
-
------------------
+Repo se află [aici](https://github.com/iamntz/wp-book-review).
 
 ## Notă de început
 
 Trebuie să menționez că o bună parte din cod este luat direct din [Codex-ul WordPress](http://codex.wordpress.org/Main_Page). Scopul acestui articol nu este acela de a-ți oferi cod complet original ci acela de a-ți arăta un mod de lucru: ce să folosești, unde să cauți, cum să organizezi codul, cum să folosești clase șamd.
+
+Nu uita, suntem pe forum ca să învățăm cu toții!
+
+- Dacă ai nelămuriri, întreabă, oricât de ridicolă ți s-ar părea întrebarea. Nu o să râdă nimeni de tine, nu o să te ia nimeni la mișto, nimeni nu s-a născut învățat.
+- Dacă observi vreo greșeală în codul meu sau dacă ai vreo idee mai bună de a face un anumit lucru, nu ezita să lași un comentariu!
 
 ## Primii Pași
 
@@ -292,9 +274,7 @@ class Metabox
 
   protected function addFields($post)
   {
-    $fields = '';
-
-    return $fields;
+    return implode("\n", $fields);
   }
 
   public function saveMeta($post_id)
@@ -331,6 +311,8 @@ class Metabox
 
 Facem o clasă ce adaugă un metabox pentru CPT-ul nostru, adaugă nonce-ul și pregătește terenul pentru adăugarea field-urilor necesare. În mare parte, și aici este codul luat tot [din Codex](https://codex.wordpress.org/Function_Reference/add_meta_box).
 
+După cum observi, am adăugat și câteva `do_action` pentru a permite adăugarea de conținut extra din alte plugin-uri sau din `functions.php`.
+
 #### Git
 
 ```
@@ -365,9 +347,9 @@ După care vom adăuga field-urile în metoda `addFields`:
 
 ```php
 // inc/bookReview/Metabox.php @ addFields
-$fields .= $this->getTextField($post->ID, '_isbn', __('ISBN'));
-$fields .= $this->getTextField($post->ID, '_publish_year', __('Publish Year'));
-$fields .= $this->getTextField($post->ID, '_buy_book', __('Buying Links'), true);
+$fields[] = $this->getTextField($post->ID, '_isbn', __('ISBN'));
+$fields[] = $this->getTextField($post->ID, '_publish_year', __('Publish Year'));
+$fields[] = $this->getTextField($post->ID, '_buy_book', __('Buying Links'), true););
 
 ```
 
@@ -388,6 +370,96 @@ Probabil ai observat un underscore în fața fiecărui nume al field-urilor. Est
 #### Git
 
 ```
-git add .
 git commit -am "Added basic meta fields"
 ```
+
+### Rating & Progres
+
+Pentru că rating-ul și progresul sunt niște chestii foarte fixe, vom adăuga o metodă asemănătoare cu `getTextField` dar care va genera un tag `select`:
+
+```php
+// inc/bookReview/Metabox.php
+protected function getSelectField($postID, $name, $label, Array $values)
+{
+  $storedValue = get_post_meta($postID, $name, true);
+
+  $options = array();
+  foreach ($values as $value => $text) {
+    $options[] = sprintf('<option value="%1$s"%2$s>%3$s</option>', $value, selected($storedValue, $value, false), $text);
+  }
+
+  $field = sprintf('<select name="%1$s" id="%1$s" class="widefat">%2$s</select>', $name, implode("\n", $options));
+
+  return sprintf('<p><label for="%s">%s: %s</label></p>', $name, $label, $field);
+}
+```
+
+După care, în metoda `addFields` adăugăm:
+
+```php
+// inc/bookReview/Metabox.php @ addFields
+$fields[] = $this->getProgress($post->ID);
+$fields[] = $this->getRating($post->ID);
+```
+
+Metoda `getProgress` va chema `getSelectField`:
+
+```php
+// inc/bookReview/Metabox.php
+protected function getProgress($postID)
+{
+  $values = apply_filters('book-review/metabox/progress-options', array(
+    "list" => __('On My List'),
+    "reading" => __('Currently Reading'),
+    "read" => __('Read'),
+  ));
+
+  return $this->getSelectField($postID, '_book_progress', __('Book Progress'), $values);
+}
+```
+
+Trecerea valorilor implicite prin `apply_filters` va permite adăugarea de opțiuni ori dintr-un alt plugin ori din `functions.php`.
+
+Similar, avem și `getRating`:
+
+```php
+// inc/bookReview/Metabox.php
+protected function getRating($postID)
+{
+  $values = apply_filters('book-review/metabox/progress-options', array(
+    -1 => __('- Pick One -'),
+    1 => __('Bad'),
+    2 => __('Meh'),
+    3 => __('Mediocre'),
+    4 => __('Pretty good'),
+    5 => __('Awesome!'),
+  ));
+
+  return $this->getSelectField($postID, '_book_rating', __('Book Rating'), $values);
+}
+```
+
+Nu ar trebui să uităm să salvăm toate aceste câmpuri (în metoda `saveFields`)::
+
+```php
+// inc/bookReview/Metabox.php @ saveFields
+
+update_post_meta($postID, '_book_progress', sanitize_text_field($_POST['_book_progress']));
+update_post_meta($postID, '_book_rating', sanitize_text_field($_POST['_book_rating']));
+```
+
+#### Git
+
+```
+git commit -am "Added rating & book status meta fields"
+```
+
+
+## Javascript
+
+În mod normal, aș folosi pentru coperta cărții [featured image](https://codex.wordpress.org/Post_Thumbnails). Dar pentru că vrem să învățăm lucruri, voi aborda cealaltă metodă: integrarea cu galeria WordPress-ului.
+
+În plus, putem să extindem puțin toată povestea și să adăugăm mai multe imagini pentru o carte (copertă, câteva poze/scan-uri etc).
+
+
+*Va urma*

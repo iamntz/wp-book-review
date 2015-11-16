@@ -27,13 +27,52 @@ class Metabox
 
 	protected function addFields($post)
 	{
-		$fields = '';
+		$fields[] = $this->getTextField($post->ID, '_isbn', __('ISBN'));
+		$fields[] = $this->getTextField($post->ID, '_publish_year', __('Publish Year'));
+		$fields[] = $this->getTextField($post->ID, '_buy_book', __('Buying Links'), true);
+		$fields[] = $this->getProgress($post->ID);
+		$fields[] = $this->getRating($post->ID);
 
-		$fields .= $this->getTextField($post->ID, '_isbn', __('ISBN'));
-		$fields .= $this->getTextField($post->ID, '_publish_year', __('Publish Year'));
-		$fields .= $this->getTextField($post->ID, '_buy_book', __('Buying Links'), true);
+		return implode("\n", $fields);
+	}
 
-    return $fields;
+	protected function getProgress($postID)
+	{
+		$values = apply_filters('book-review/metabox/progress-options', array(
+			"list" => __('On My List'),
+			"reading" => __('Currently Reading'),
+			"read" => __('Read'),
+		));
+
+		return $this->getSelectField($postID, '_book_progress', __('Book Progress'), $values);
+	}
+
+	protected function getRating($postID)
+	{
+		$values = apply_filters('book-review/metabox/progress-options', array(
+			-1 => __('- Pick One -'),
+			1 => __('Bad'),
+			2 => __('Meh'),
+			3 => __('Mediocre'),
+			4 => __('Pretty good'),
+			5 => __('Awesome!'),
+		));
+
+		return $this->getSelectField($postID, '_book_rating', __('Book Rating'), $values);
+	}
+
+	protected function getSelectField($postID, $name, $label, array $values)
+	{
+		$storedValue = get_post_meta($postID, $name, true);
+
+		$options = array();
+		foreach ($values as $value => $text) {
+			$options[] = sprintf('<option value="%1$s"%2$s>%3$s</option>', $value, selected($storedValue, $value, false), $text);
+		}
+
+		$field = sprintf('<select name="%1$s" id="%1$s" class="widefat">%2$s</select>', $name, implode("\n", $options));
+
+		return sprintf('<p><label for="%s">%s: %s</label></p>', $name, $label, $field);
 	}
 
 	protected function getTextField($postID, $name, $label, $textarea = false)
@@ -74,11 +113,13 @@ class Metabox
 		do_action('book-review/metabox/save', $post_id);
 	}
 
-  protected function saveFields($postID)
-  {
-    update_post_meta($postID, '_isbn', sanitize_text_field($_POST['_isbn']));
-    update_post_meta($postID, '_publish_year', sanitize_text_field($_POST['_publish_year']));
+	protected function saveFields($postID)
+	{
+		update_post_meta($postID, '_isbn', sanitize_text_field($_POST['_isbn']));
+		update_post_meta($postID, '_publish_year', sanitize_text_field($_POST['_publish_year']));
+		update_post_meta($postID, '_book_progress', sanitize_text_field($_POST['_book_progress']));
+		update_post_meta($postID, '_book_rating', sanitize_text_field($_POST['_book_rating']));
 
-    update_post_meta($postID, '_buy_book', wp_kses($_POST['_buy_book']));
-  }
+		update_post_meta($postID, '_buy_book', wp_kses($_POST['_buy_book']));
+	}
 }

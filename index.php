@@ -31,8 +31,6 @@ register_activation_hook(__FILE__, function () {
 	flush_rewrite_rules();
 });
 
-
-
 require_once 'inc/bookReview/Metabox.php';
 
 add_action('admin_init', function () {
