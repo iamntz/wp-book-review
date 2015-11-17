@@ -15,6 +15,19 @@ jQuery(document).ready(function($){
         frame.open();
     });
 
+    function previewAttachment(attachment) {
+        var previewContainer = $('.js-previewBookCover');
+        var attachmentPreview = attachment.sizes[previewContainer.data('previewSize')];
+
+        var previewImage = $('<img />').attr({
+            src : attachmentPreview.url,
+            width : attachmentPreview.width,
+            height : attachmentPreview.height,
+        });
+
+        previewContainer.html(previewImage);
+    }
+
     frame.on('open', function(){
         var selection = frame.state().get('selection');
         var id = $('.js-bookCover').val();
@@ -27,14 +40,7 @@ jQuery(document).ready(function($){
         var attachments = frame.state().get('selection').toJSON();
         if(attachments.length){
             $('.js-bookCover').val(_.pluck(attachments, 'id')[0]);
-            var attachmentPreview = attachments[0].sizes.thumbnail;
-            var previewImage = $('<img />').attr({
-                src : attachmentPreview.url,
-                width : attachmentPreview.width,
-                height : attachmentPreview.height,
-            });
-
-            $('.js-previewBookCover').html(previewImage);
+            previewAttachment(attachments[0]);
         }
     });
 });

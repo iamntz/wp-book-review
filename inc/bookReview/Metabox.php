@@ -42,13 +42,14 @@ class Metabox
         $value = get_post_meta($postID, '_book_cover', true);
 
         $attachmentPreview = '';
+
+        $previewSize = apply_filters('book-review/images/cover-size', 'thumbnail');
         if (!empty($value)) {
-            $size = apply_filters('book-review/images/cover-size', 'thumbnail');
-            $attachmentPreview = wp_get_attachment_image($value, $size);
+            $attachmentPreview = wp_get_attachment_image($value, $previewSize);
         }
 
         $field[] = sprintf('<input type="hidden" name="_book_cover" value="%s" class="js-bookCover">', esc_attr($value));
-        $field[] = sprintf('<span class="previewBookCover js-previewBookCover">%s</span>', $attachmentPreview);
+        $field[] = sprintf('<span class="previewBookCover js-previewBookCover" data-preview-size="%s">%s</span>', $previewSize, $attachmentPreview);
         $field[] = sprintf('<button class="button-secondary js-uploadBookCover">%s</button>', __('Upload Book Cover'));
 
         return sprintf('<p>%s</p>', implode("\n", $field));

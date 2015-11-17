@@ -610,6 +610,8 @@ Acum avem posibilitatea de a selecta o imagine, nu ar fi frumos să putem să:
 1. O vedem în admin?
 2. O ștergem :)
 
+#### Preview pentru imaginea proaspăt adăugată
+
 Ajustăm un pic metoda `getImageUploader`, astfel încât să afișăm imaginea selectată și salvată. În plus, schimbăm și tipul  `input`-ului din `text` în `hidden`:
 
 ```diff
@@ -650,4 +652,88 @@ Pentru a avea un preview funcțional și când se schimbă imaginea (deci nu doa
 
 ```
 git commit -am "Media upload will show preview"
+```
+
+#### Dimensiune dinamică a imaginii
+În acest moment putem avea o dimensiune de preview când se încarcă paginii și o altă dimensiune când schimbăm imaginea. În configurația curentă nu e cazul, dar ce se întâmplă dacă un alt programator va folosi filtrul `book-review/images/cover-size` ?
+
+Vom trimite această dimensiune și în `fileUpload.js` astfel încât schimbarea imaginii nu înseamnă și schimbarea dimensiunii de afișare.
+
+Pentru asta, mutăm filtrul înaintea condiției, redenumim variabila astfel încât va avea un nume ceva mai sugestiv, după care trimitem dimensiunea ca parametru `data-*`:
+
+```diff
+inc/bookReview/Metabox.php
+  $attachmentPreview = '';
++
++ $previewSize = apply_filters('book-review/images/cover-size', 'thumbnail');
+  if (!empty($value)) {
+-     $size = apply_filters('book-review/images/cover-size', 'thumbnail');
+-     $attachmentPreview = wp_get_attachment_image($value, $size);
++     $attachmentPreview = wp_get_attachment_image($value, $previewSize);
+  }
+
+  $field[] = sprintf('<input type="hidden" name="_book_cover" value="%s" class="js-bookCover">', esc_attr($value));
+- $field[] = sprintf('<span class="previewBookCover js-previewBookCover">%s</span>', $attachmentPreview);
++ $field[] = sprintf('<span class="previewBookCover js-previewBookCover" data-preview-size="%s">%s</span>', $previewSize, $attachmentPreview);
+```
+
+Pentru că se aglomerează situația din callback-ul `close` vom extrage tot ce ține de preview în funcția `previewAttachment`:
+
+```diff
+// assets/javascripts/fileUpload.js
+if(attachments.length){
+   $('.js-bookCover').val(_.pluck(attachments, 'id')[0]);
+-  var attachmentPreview = attachments[0].sizes.thumbnail;
+-  var previewImage = $('<img />').attr({
+-      src : attachmentPreview.url,
+-      width : attachmentPreview.width,
+-      height : attachmentPreview.height,
+-  });
+-
+-  $('.js-previewBookCover').html(previewImage);
++  previewAttachment(attachments[0]);
+}
+```
+
+
+```diff
+// assets/javascripts/fileUpload.js
++ function previewAttachment(attachment) {
++     var attachmentPreview = attachment.sizes.thumbnail;
++     var previewImage = $('<img />').attr({
++         src : attachmentPreview.url,
++         width : attachmentPreview.width,
++         height : attachmentPreview.height,
++     });
++
++     $('.js-previewBookCover').html(previewImage);
++ }
+```
+
+
+După care vom ține cont și de dimensiunea specificată în atributul `data-preview-size`:
+
+```diff
+// assets/javascripts/fileUpload.js
+     function previewAttachment(attachment) {
+-        var attachmentPreview = attachment.sizes.thumbnail;
++        var previewContainer = $('.js-previewBookCover');
++        var attachmentPreview = attachment.sizes[previewContainer.data('previewSize')];
++
+         var previewImage = $('<img />').attr({
+             src : attachmentPreview.url,
+             width : attachmentPreview.width,
+             height : attachmentPreview.height,
+         });
+
+-        $('.js-previewBookCover').html(previewImage);
++        previewContainer.html(previewImage);
+     }
+```
+
+
+#### Git
+
+```
+git commit -am "Media upload will show preview at the right size"
 ```
