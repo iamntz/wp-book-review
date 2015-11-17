@@ -28,6 +28,12 @@ jQuery(document).ready(function($){
         previewContainer.html(previewImage);
     }
 
+    $('.js-deletePreviewBookCover').on('click', function(e){
+        e.preventDefault();
+        $('.js-previewBookCover').empty();
+        $('.js-bookCover').val('');
+    });
+
     frame.on('open', function(){
         var selection = frame.state().get('selection');
         var id = $('.js-bookCover').val();

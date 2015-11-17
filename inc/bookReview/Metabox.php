@@ -50,9 +50,11 @@ class Metabox
 
         $field[] = sprintf('<input type="hidden" name="_book_cover" value="%s" class="js-bookCover">', esc_attr($value));
         $field[] = sprintf('<span class="previewBookCover js-previewBookCover" data-preview-size="%s">%s</span>', $previewSize, $attachmentPreview);
+        $field[] = sprintf('<span class="deletePreviewBookCover js-deletePreviewBookCover">&times;</span>');
         $field[] = sprintf('<button class="button-secondary js-uploadBookCover">%s</button>', __('Upload Book Cover'));
 
-        return sprintf('<p>%s</p>', implode("\n", $field));
+        $containerClassName = !empty($attachmentPreview) ? 'has-preview' : '';
+        return sprintf('<p class="%s">%s</p>', $containerClassName, implode("\n", $field));
     }
 
     protected function getProgress($postID)

@@ -737,3 +737,40 @@ După care vom ține cont și de dimensiunea specificată în atributul `data-pr
 ```
 git commit -am "Media upload will show preview at the right size"
 ```
+
+
+#### Ștergerea imaginii
+
+Pentru a șterge imaginea, va trebui să mai adăugăm un element în metoda `getImageUploader` și o clasă html:
+
+```diff
+// inc/bookReview/Metabox.php
+         $field[] = sprintf('<span class="previewBookCover js-previewBookCover" data-preview-size="%s">%s</span>', $previewSize, $attachmentPreview);
++        $field[] = sprintf('<span class="deletePreviewBookCover js-deletePreviewBookCover">&times;</span>');
+
+-        return sprintf('<p>%s</p>', implode("\n", $field));
++        $containerClassName = !empty($attachmentPreview) ? 'has-preview' : '';
++        return sprintf('<p class="%s">%s</p>', $containerClassName, implode("\n", $field));
+     }
+```
+
+Adăugăm o clasă pentru a putea ascunde ulterior butonul de ștergere. Momentan scopul nu este acela de a avea elemente aspectuoase, dar asta nu inseamnă că nu putem pregăti terenul!
+
+```diff
+// assets/javascripts/fileUpload.js
+         previewContainer.html(previewImage);
+     }
+
++    $('.js-deletePreviewBookCover').on('click', function(e){
++        e.preventDefault();
++        $('.js-previewBookCover').empty();
++        $('.js-bookCover').val('');
++    });
+```
+
+
+#### Git
+
+```
+git commit -am "Media preview can now be removed"
+```
