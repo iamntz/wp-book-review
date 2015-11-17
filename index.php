@@ -36,3 +36,14 @@ require_once 'inc/bookReview/Metabox.php';
 add_action('admin_init', function () {
     new bookReview\Metabox();
 });
+
+add_action('admin_enqueue_scripts', function ($hook) {
+    wp_register_script('book-review-fileUpload', plugin_dir_url(__FILE__) . 'assets/javascripts/fileUpload.js', array('jquery'), '1');
+
+    wp_localize_script('book-review-fileUpload', 'book_review_i18n', array(
+        'uploaderTitle' => __('Upload a book Cover'),
+        'uploaderButton' => __('Use selected Image')
+    ));
+
+    wp_enqueue_script('book-review-fileUpload');
+});

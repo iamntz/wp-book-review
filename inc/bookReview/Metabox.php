@@ -32,8 +32,18 @@ class Metabox
         $fields[] = $this->getTextField($post->ID, '_buy_book', __('Buying Links'), true);
         $fields[] = $this->getProgress($post->ID);
         $fields[] = $this->getRating($post->ID);
+        $fields[] = $this->getImageUploader($post->ID);
 
         return implode("\n", $fields);
+    }
+
+    protected function getImageUploader($postID)
+    {
+        $value = get_post_meta($postID, '_book_cover', true);
+        $field[] = sprintf('<input type="text" name="_book_cover" value="%s" class="js-bookCover">', esc_attr($value));
+        $field[] = sprintf('<button class="js-uploadBookCover">%s</button>', __('Upload Book Cover'));
+
+        return sprintf('<p>%s</p>', implode("\n", $field));
     }
 
     protected function getProgress($postID)
@@ -119,6 +129,7 @@ class Metabox
         update_post_meta($postID, '_publish_year', sanitize_text_field($_POST['_publish_year']));
         update_post_meta($postID, '_book_progress', sanitize_text_field($_POST['_book_progress']));
         update_post_meta($postID, '_book_rating', sanitize_text_field($_POST['_book_rating']));
+        update_post_meta($postID, '_book_cover', sanitize_text_field($_POST['_book_cover']));
 
         update_post_meta($postID, '_buy_book', wp_kses($_POST['_buy_book']));
     }

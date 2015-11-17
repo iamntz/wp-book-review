@@ -10,6 +10,7 @@ Nu uita, suntem pe forum ca să învățăm cu toții!
 
 - Dacă ai nelămuriri, întreabă, oricât de ridicolă ți s-ar părea întrebarea. Nu o să râdă nimeni de tine, nu o să te ia nimeni la mișto, nimeni nu s-a născut învățat.
 - Dacă observi vreo greșeală în codul meu sau dacă ai vreo idee mai bună de a face un anumit lucru, nu ezita să lași un comentariu!
+- Dacă ai de gând să faci miștouri, să glumești, să lași un comentariu offtopic, abtine-te sau comentează [aici](https://devforum.ro/t/tutorial-plugin-wordpress-book-review-comentarii-offtopic/2238). :smile:
 
 ## Primii Pași
 
@@ -462,4 +463,105 @@ git commit -am "Added rating & book status meta fields"
 În plus, putem să extindem puțin toată povestea și să adăugăm mai multe imagini pentru o carte (copertă, câteva poze/scan-uri etc).
 
 
-*Va urma*
+#### Încărcarea fișierelor statice
+
+Poți include fișierele statice în mai multe feluri, dar WordPress are un singur mod corect¹: folosind [wp_register_script](https://codex.wordpress.org/Function_Reference/wp_register_script)/[wp_register_stype](https://codex.wordpress.org/Function_Reference/wp_register_style) în interiorul hook-ul `wp_enqueue_scripts` pentru paginile de frontend, respectiv hook-ul  `admin_enqueue_scripts` pentru paginile de admin.
+
+¹_Mai există și varianta `wp_print_scripts`/`admin_print_scripts` dar consider că în acest caz este un pic overkill_
+
+Pentru că vrem ca pluginul nostru să fie ușor de tradus, vom folosi și [`wp_localize_script`](https://codex.wordpress.org/Function_Reference/wp_localize_script). Această funcție va genera un obiect Javascript accesibil global, astfel încât vom putea folosi în script-urile noastre ceva de genul `book_review_i18n.uploaderTitle`.
+
+```php
+// index.php
+add_action('admin_enqueue_scripts', function ($hook) {
+    wp_register_script('book-review-fileUpload', plugin_dir_url(__FILE__) . 'assets/javascripts/fileUpload.js', array('jquery'), '1');
+    wp_enqueue_script('book-review-fileUpload');
+
+    wp_localize_script('book-review-fileUpload', 'book_review_i18n', array(
+        'uploaderTitle' => __('Upload a book Cover'),
+        'uploaderButton' => __('Use selected Image')
+    ));
+});
+
+```
+
+### Galeria WordPress
+De vreo doi-trei ani, WordPress a renunțat la modul vechi de administrare al imaginilor și s-a trecut la o aplicație Backbone care este destul de extensibilă. Noi vom avea nevoie doar de funcționalitate de bază: upload și selectarea fișierelor existente.
+
+Pentru că jQuery din WordPress are modul de compatibilitate activat, vom folosi un `document.ready` cu `$` trimis ca parametru la callback, astfel încât `$` va fi disponibil.
+
+Dacă nu facem asta, orice selector de jQuery va fi de de forma `jQuery('div')`.
+
+```javascript
+jQuery(document).ready(function($){
+    // codul nostru
+});
+```
+
+
+Înainte de a continua cu JS va trebui să adăugăm un trigger în clasa Metabox.php:
+
+
+```php
+// inc/bookReview/Metabox.php @ addFields
+$fields[] = $this->getImageUploader($post->ID);
+```
+
+Respectiv metoda `getImageUploader`:
+
+```php
+
+// inc/bookReview/Metabox.php
+protected function getImageUploader($postID)
+{
+    $value = get_post_meta($postID, '_book_cover', true);
+    $field[] = sprintf('<input type="text" name="_book_cover" value="%s" class="js-bookCover">', esc_attr($value));
+    $field[] = sprintf('<button class="js-uploadBookCover">%s</button>', __('Upload Book Cover'));
+
+    return sprintf('<p>%s</p>', implode("\n", $field));
+}
+```
+
+Să nu uităm să adăugăm și în metoda `saveFields` noul câmp:
+
+```php
+// inc/bookReview/Metabox.php @ saveFields
+update_post_meta($postID, '_book_cover', sanitize_text_field($_POST['_book_cover']));
+```
+
+Momentan nu adăugăm preview, ci doar pregătim terenul. De asemenea, `input`-ul în care vor fi stocate ID-urile imaginilor va fi, în final, de tip `hidden`, dar momentan avem nevoie să vedem cum funcționază, deci rămâne de tip `text`.
+
+De asemenea, toate elementele ce le vom folosi din JS vor avea o clasă de genul `js-*` pentru a putea separa ușor lucrurile.
+
+```javascript
+// assets/javascripts/fileUpload.js
+var frame = wp.media({
+    title : book_review_i18n.uploaderTitle,
+    multiple : false,
+    library : {
+        type : 'image'
+    },
+    button : {
+        text : book_review_i18n.uploaderButton
+    }
+});
+
+$('.js-uploadBookCover').on('click', function(e){
+    e.preventDefault();
+    frame.open();
+});
+
+frame.on('close',function() {
+    var attachments = frame.state().get('selection').toJSON();
+    $('.js-bookCover').val(_.pluck(attachments, 'id')[0]);
+});
+```
+
+În acest moment avem și un media manager cât de cât funcțional. Să punem totul în Git!
+
+#### Git
+
+```
+git add .
+git commit -am "Added media uploader"
+```
