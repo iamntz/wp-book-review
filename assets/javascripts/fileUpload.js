@@ -15,8 +15,18 @@ jQuery(document).ready(function($){
         frame.open();
     });
 
+    frame.on('open', function(){
+        var selection = frame.state().get('selection');
+        var id = $('.js-bookCover').val();
+        attachment = wp.media.attachment(id);
+        attachment.fetch();
+        selection.add( attachment ? [ attachment ] : [] );
+    });
+
     frame.on('close',function() {
         var attachments = frame.state().get('selection').toJSON();
-        $('.js-bookCover').val(_.pluck(attachments, 'id')[0]);
+        if(attachments.length){
+            $('.js-bookCover').val(_.pluck(attachments, 'id')[0]);
+        }
     });
 });

@@ -565,3 +565,41 @@ frame.on('close',function() {
 git add .
 git commit -am "Added media uploader"
 ```
+
+
+### Galeria WordPress - Îmbunătățiri
+Sunt mai multe probleme cu file uploader-ul nostru:
+
+1. Dacă deschizi galeria și o închizi fără să selectezi nimic, se pierde valoarea stocată.
+2. După ce salvezi, dacă deschizi galeria din nou nu ai nici o imagine selectată;
+
+
+```diff
+@ assets/javascripts/fileUpload.js
+
+- $('.js-bookCover').val(_.pluck(attachments, 'id')[0]);
++
++ if(attachments.length){
++     $('.js-bookCover').val(_.pluck(attachments, 'id')[0]);
++ }
+```
+
+Asta a rezolvat prima problemă. Cum o rezolvăm pe a doua? Așa cum avem un event pentru `close`, avem un event și pentru `open`. Prin urmare:
+
+```javascript
+// assets/javascripts/fileUpload.js
+
+frame.on('open', function(){
+    var selection = frame.state().get('selection');
+    var id = $('.js-bookCover').val();
+    attachment = wp.media.attachment(id);
+    attachment.fetch();
+    selection.add( attachment ? [ attachment ] : [] );
+});
+```
+
+#### Git
+Acum că am rezolvat problemele, să mai facem un commit:
+```
+git commit -am "Fixed media uploader issues"
+```
