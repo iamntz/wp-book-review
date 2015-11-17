@@ -40,8 +40,16 @@ class Metabox
     protected function getImageUploader($postID)
     {
         $value = get_post_meta($postID, '_book_cover', true);
-        $field[] = sprintf('<input type="text" name="_book_cover" value="%s" class="js-bookCover">', esc_attr($value));
-        $field[] = sprintf('<button class="js-uploadBookCover">%s</button>', __('Upload Book Cover'));
+
+        $attachmentPreview = '';
+        if (!empty($value)) {
+            $size = apply_filters('book-review/images/cover-size', 'thumbnail');
+            $attachmentPreview = wp_get_attachment_image($value, $size);
+        }
+
+        $field[] = sprintf('<input type="hidden" name="_book_cover" value="%s" class="js-bookCover">', esc_attr($value));
+        $field[] = sprintf('<span class="previewBookCover js-previewBookCover">%s</span>', $attachmentPreview);
+        $field[] = sprintf('<button class="button-secondary js-uploadBookCover">%s</button>', __('Upload Book Cover'));
 
         return sprintf('<p>%s</p>', implode("\n", $field));
     }

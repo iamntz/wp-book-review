@@ -27,6 +27,14 @@ jQuery(document).ready(function($){
         var attachments = frame.state().get('selection').toJSON();
         if(attachments.length){
             $('.js-bookCover').val(_.pluck(attachments, 'id')[0]);
+            var attachmentPreview = attachments[0].sizes.thumbnail;
+            var previewImage = $('<img />').attr({
+                src : attachmentPreview.url,
+                width : attachmentPreview.width,
+                height : attachmentPreview.height,
+            });
+
+            $('.js-previewBookCover').html(previewImage);
         }
     });
 });

@@ -603,3 +603,51 @@ Acum că am rezolvat problemele, să mai facem un commit:
 ```
 git commit -am "Fixed media uploader issues"
 ```
+
+### Galeria WordPress - Și mai multe Îmbunătățiri!
+Acum avem posibilitatea de a selecta o imagine, nu ar fi frumos să putem să:
+
+1. O vedem în admin?
+2. O ștergem :)
+
+Ajustăm un pic metoda `getImageUploader`, astfel încât să afișăm imaginea selectată și salvată. În plus, schimbăm și tipul  `input`-ului din `text` în `hidden`:
+
+```diff
+//inc/bookReview/Metabox.php
+protected function getImageUploader($postID)
+{
+  $value = get_post_meta($postID, '_book_cover', true);
+- $field[] = sprintf('<input type="text" name="_book_cover" value="%s" class="js-bookCover">', esc_attr($value));
+- $field[] = sprintf('<button class="js-uploadBookCover">%s</button>', __('Upload Book Cover'));
++
++ $attachmentPreview = '';
++ if (!empty($value)) {
++     $size = apply_filters('book-review/images/cover-size', 'thumbnail');
++     $attachmentPreview = wp_get_attachment_image($value, $size);
++ }
++
++ $field[] = sprintf('<input type="hidden" name="_book_cover" value="%s" class="js-bookCover">', esc_attr($value));
++ $field[] = sprintf('<span class="previewBookCover js-previewBookCover">%s</span>', $attachmentPreview);
++ $field[] = sprintf('<button class="button-secondary js-uploadBookCover">%s</button>', __('Upload Book Cover'));
+```
+
+Pentru a avea un preview funcțional și când se schimbă imaginea (deci nu doar la refresh) modificăm `fileUpload.js` astfel:
+
+```diff
+// assets/javascripts/fileUpload.js
+   $('.js-bookCover').val(_.pluck(attachments, 'id')[0]);
++  var attachmentPreview = attachments[0].sizes.thumbnail;
++  var previewImage = $('<img />').attr({
++      src : attachmentPreview.url,
++      width : attachmentPreview.width,
++      height : attachmentPreview.height,
++  });
++
++  $('.js-previewBookCover').html(previewImage);
+```
+
+#### Git
+
+```
+git commit -am "Media upload will show preview"
+```
