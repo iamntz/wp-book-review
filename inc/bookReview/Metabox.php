@@ -57,7 +57,7 @@ class Metabox
         $field[] = sprintf('<button class="button-secondary js-uploadBookCover">%s</button>', __('Upload Book Cover'));
 
         $containerClassName = !empty($attachmentPreview) ? 'has-preview' : '';
-        return sprintf('<div class="previewBookCoverContainer %s" style="width:%dpx">%s</div>',
+        return sprintf('<div class="previewBookCoverContainer js-previewBookCoverContainer %s" style="width:%dpx">%s</div>',
             $containerClassName,
             $this->getAttachmentSizeByName($previewSize)['width'],
             implode("\n", $field)

@@ -32,6 +32,7 @@ jQuery(document).ready(function($){
         e.preventDefault();
         $('.js-previewBookCover').empty();
         $('.js-bookCover').val('');
+        $('.js-previewBookCoverContainer').removeClass('has-preview');
     });
 
     frame.on('open', function(){
@@ -46,6 +47,7 @@ jQuery(document).ready(function($){
         var attachments = frame.state().get('selection').toJSON();
         if(attachments.length){
             $('.js-bookCover').val(_.pluck(attachments, 'id')[0]);
+            $('.js-previewBookCoverContainer').addClass('has-preview');
             previewAttachment(attachments[0]);
         }
     });
