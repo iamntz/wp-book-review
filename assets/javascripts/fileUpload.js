@@ -10,14 +10,19 @@ jQuery(document).ready(function($){
         }
     });
 
+    var previewClassName = 'has-preview';
+
+    var previewContainer = $('.js-previewBookCoverContainer');
+    var previewCover = $('.js-previewBookCover');
+    var bookCover = $('.js-bookCover');
+
     $('.js-uploadBookCover').on('click', function(e){
         e.preventDefault();
         frame.open();
     });
 
     function previewAttachment(attachment) {
-        var previewContainer = $('.js-previewBookCover');
-        var attachmentPreview = attachment.sizes[previewContainer.data('previewSize')];
+        var attachmentPreview = attachment.sizes[previewCover.data('previewSize')];
 
         var previewImage = $('<img />').attr({
             src : attachmentPreview.url,
@@ -25,19 +30,19 @@ jQuery(document).ready(function($){
             height : attachmentPreview.height,
         });
 
-        previewContainer.html(previewImage);
+        previewCover.html(previewImage);
     }
 
     $('.js-deletePreviewBookCover').on('click', function(e){
         e.preventDefault();
-        $('.js-previewBookCover').empty();
-        $('.js-bookCover').val('');
-        $('.js-previewBookCoverContainer').removeClass('has-preview');
+        previewCover.empty();
+        bookCover.val('');
+        previewContainer.removeClass(previewClassName);
     });
 
     frame.on('open', function(){
         var selection = frame.state().get('selection');
-        var id = $('.js-bookCover').val();
+        var id = bookCover.val();
         attachment = wp.media.attachment(id);
         attachment.fetch();
         selection.add( attachment ? [ attachment ] : [] );
@@ -46,8 +51,8 @@ jQuery(document).ready(function($){
     frame.on('close',function() {
         var attachments = frame.state().get('selection').toJSON();
         if(attachments.length){
-            $('.js-bookCover').val(_.pluck(attachments, 'id')[0]);
-            $('.js-previewBookCoverContainer').addClass('has-preview');
+            bookCover.val(_.pluck(attachments, 'id')[0]);
+            previewContainer.addClass(previewClassName);
             previewAttachment(attachments[0]);
         }
     });
