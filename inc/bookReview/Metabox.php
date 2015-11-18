@@ -27,12 +27,15 @@ class Metabox
 
     protected function addFields($post)
     {
+        $fields[] = $this->getImageUploader($post->ID);
+
+        $fields[] = sprintf('<div class="previewBookFields" style="margin-right:%dpx">', ($this->getAttachmentSizeByName($this->getPreviewSize())['width'] + 20));
         $fields[] = $this->getTextField($post->ID, '_isbn', __('ISBN'));
         $fields[] = $this->getTextField($post->ID, '_publish_year', __('Publish Year'));
         $fields[] = $this->getTextField($post->ID, '_buy_book', __('Buying Links'), true);
         $fields[] = $this->getProgress($post->ID);
         $fields[] = $this->getRating($post->ID);
-        $fields[] = $this->getImageUploader($post->ID);
+        $fields[] = '</div>';
 
         return implode("\n", $fields);
     }
@@ -43,7 +46,7 @@ class Metabox
 
         $attachmentPreview = '';
 
-        $previewSize = apply_filters('book-review/images/cover-size', 'thumbnail');
+        $previewSize = $this->getPreviewSize();
         if (!empty($value)) {
             $attachmentPreview = wp_get_attachment_image($value, $previewSize);
         }
@@ -54,7 +57,16 @@ class Metabox
         $field[] = sprintf('<button class="button-secondary js-uploadBookCover">%s</button>', __('Upload Book Cover'));
 
         $containerClassName = !empty($attachmentPreview) ? 'has-preview' : '';
-        return sprintf('<p class="%s">%s</p>', $containerClassName, implode("\n", $field));
+        return sprintf('<div class="previewBookCoverContainer %s" style="width:%dpx">%s</div>',
+            $containerClassName,
+            $this->getAttachmentSizeByName($previewSize)['width'],
+            implode("\n", $field)
+        );
+    }
+
+    protected function getPreviewSize()
+    {
+        return apply_filters('book-review/images/cover-size', 'thumbnail');
     }
 
     protected function getProgress($postID)
@@ -143,5 +155,37 @@ class Metabox
         update_post_meta($postID, '_book_cover', sanitize_text_field($_POST['_book_cover']));
 
         update_post_meta($postID, '_buy_book', wp_kses($_POST['_buy_book']));
+    }
+
+    protected function getAttachmentSizeByName($size = '')
+    {
+        global $_wp_additional_image_sizes;
+
+        $sizes = array();
+        $get_intermediate_image_sizes = get_intermediate_image_sizes();
+
+        foreach ($get_intermediate_image_sizes as $_size) {
+            if (in_array($_size, array('thumbnail', 'medium', 'large'))) {
+                $sizes[$_size]['width'] = get_option($_size . '_size_w');
+                $sizes[$_size]['height'] = get_option($_size . '_size_h');
+                $sizes[$_size]['crop'] = (bool) get_option($_size . '_crop');
+            } elseif (isset($_wp_additional_image_sizes[$_size])) {
+                $sizes[$_size] = array(
+                    'width' => $_wp_additional_image_sizes[$_size]['width'],
+                    'height' => $_wp_additional_image_sizes[$_size]['height'],
+                    'crop' => $_wp_additional_image_sizes[$_size]['crop'],
+                );
+            }
+        }
+
+        if ($size) {
+            if (isset($sizes[$size])) {
+                return $sizes[$size];
+            } else {
+                return $this->getAttachmentSizeByName('thumbnail');
+            }
+        }
+
+        return $sizes;
     }
 }

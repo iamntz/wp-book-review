@@ -14,6 +14,7 @@ add_action('plugins_loaded', function () {
     load_plugin_textdomain('book-review', false, dirname(plugin_basename(__FILE__)) . '/lang');
 });
 
+define('BOOK_VERSION', '1.0.0');
 define('BOOK_POST_TYPE', 'book');
 
 define('BOOK_TAX_GENRE', 'book_genre');
@@ -38,12 +39,15 @@ add_action('admin_init', function () {
 });
 
 add_action('admin_enqueue_scripts', function ($hook) {
-    wp_register_script('book-review-fileUpload', plugin_dir_url(__FILE__) . 'assets/javascripts/fileUpload.js', array('jquery'), '1');
+    wp_register_script('book-review-fileUpload', plugin_dir_url(__FILE__) . 'assets/javascripts/fileUpload.js', array('jquery'), BOOK_VERSION);
 
     wp_localize_script('book-review-fileUpload', 'book_review_i18n', array(
         'uploaderTitle' => __('Upload a book Cover'),
-        'uploaderButton' => __('Use selected Image')
+        'uploaderButton' => __('Use selected Image'),
     ));
 
     wp_enqueue_script('book-review-fileUpload');
+
+    wp_register_style('book-review-fileUpload', plugin_dir_url(__FILE__) . 'assets/stylesheets/fileUpload.css', array(), BOOK_VERSION);
+    wp_enqueue_style('book-review-fileUpload');
 });
