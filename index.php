@@ -22,6 +22,7 @@ define('BOOK_TAX_AUTHOR', 'book_author');
 define('BOOK_TAX_PUBLISHER', 'book_publisher');
 
 require_once 'inc/bookReview/PostTypes.php';
+require_once 'inc/bookReview/BookReviewWidget.php';
 
 add_action('init', function () {
     new bookReview\PostTypes;
@@ -50,4 +51,8 @@ add_action('admin_enqueue_scripts', function ($hook) {
 
     wp_register_style('book-review-fileUpload', plugin_dir_url(__FILE__) . 'assets/stylesheets/fileUpload.css', array(), BOOK_VERSION);
     wp_enqueue_style('book-review-fileUpload');
+});
+
+add_action('widgets_init', function () {
+    register_widget('bookReview\BookReviewWidget');
 });
