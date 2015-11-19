@@ -1,4 +1,5 @@
 jQuery(document).ready(function($){
+    if(typeof wp.media == 'undefined') {return;}
     var frame = wp.media({
         title : book_review_i18n.uploaderTitle,
         multiple : false,
