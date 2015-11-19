@@ -4,26 +4,35 @@ namespace bookReview;
 
 class BookReviewWidget extends \WP_Widget
 {
+    protected $defaultValues = array(
+        'title' => '',
+        'sortby' => 'finished',
+        'sort' => 'DESC',
+    );
+
     public function __construct()
     {
         parent::__construct('book_review_widget', __('Book Review'),
             array('description' => __('A book widget')));
     }
+
     public function widget($args, $instance)
     {
     }
+
     public function form($instance)
     {
         echo $this->getTitleField($instance);
         echo $this->getSortField($instance);
     }
+
     public function update($new_instance, $old_instance)
     {
     }
 
     protected function getTitleField($instance)
     {
-        $title = !empty($instance['title']) ? $instance['title'] : '';
+        $title = !empty($instance['title']) ? $instance['title'] : $this->defaultValues['title'];
         return sprintf('<p><label for="%1$s">%2$s</label><input type="text" name="%1$s" value="%3$s" class="widefat"></p>',
             $this->get_field_id('title'), __('Title'), $title);
     }
@@ -36,7 +45,7 @@ class BookReviewWidget extends \WP_Widget
             'added' => __('Date you\'ve added the book'),
         ));
 
-        $sortby = !empty($instance['sortby']) ? $instance['sortby'] : 'finished';
+        $sortby = !empty($instance['sortby']) ? $instance['sortby'] : $this->defaultValues['sortby'];
         $select[] = sprintf('<p><label for="%1$s">%2$s </label><select class="widefat" name="%1$s">',
             $this->get_field_id('sortby'), __('Sort By:'));
 
@@ -47,7 +56,7 @@ class BookReviewWidget extends \WP_Widget
 
         $select[] = '</select></p>';
 
-        $sort = !empty($instance['sort']) ? $instance['sort'] : 'DESC';
+        $sort = !empty($instance['sort']) ? $instance['sort'] : $this->defaultValues['sort'];
         $select[] = sprintf('<p><label for="%1$s">%2$s </label><select class="widefat" name="%1$s">',
             $this->get_field_id('sort'), __('Sort:'));
 
