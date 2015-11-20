@@ -41,14 +41,14 @@ class BookReviewWidget extends \WP_Widget
 
     protected function getTitleField($instance)
     {
-        $title = !empty($instance['title']) ? $instance['title'] : $this->defaultValues['title'];
+        $title = $this->getValue($instance, 'title');
         return sprintf('<p><label>%2$s</label><input type="text" name="%1$s" value="%3$s" class="widefat"></p>',
             $this->get_field_name('title'), __('Title'), esc_attr($title));
     }
 
     protected function getLimitField($instance)
     {
-        $limit = !empty($instance['limit']) ? $instance['limit'] : $this->defaultValues['limit'];
+        $limit = $this->getValue($instance, 'limit');
         return sprintf('<p><label>%2$s</label><input type="number" min="1" step="1" name="%1$s" value="%3$s" class="widefat"></p>',
             $this->get_field_name('limit'), __('Limit'), esc_attr($limit));
     }
@@ -61,7 +61,7 @@ class BookReviewWidget extends \WP_Widget
             'added' => __('Date you\'ve added the book'),
         ));
 
-        $sortby = !empty($instance['sortby']) ? $instance['sortby'] : $this->defaultValues['sortby'];
+        $sortby = $this->getValue($instance, 'sortby');
         $select[] = sprintf('<p><label>%2$s </label><select class="widefat" name="%1$s">',
             $this->get_field_name('sortby'), __('Sort By:'));
 
@@ -86,8 +86,8 @@ class BookReviewWidget extends \WP_Widget
 
     protected function getDisplayOptionsField($instance)
     {
-        $defaultDisplayOptions = $this->widgetWasSaved($instance) ? array() : array_keys($this->defaultValues['displayOptions']);
-        $displayOptions = !empty($instance['displayOptions']) ? $instance['displayOptions'] : $defaultDisplayOptions;
+        $default = $this->widgetWasSaved($instance) ? array() : array_keys($this->defaultValues['displayOptions']);
+        $displayOptions = $this->getValue($instance, 'displayOptions', $default);
 
         foreach ($this->defaultValues['displayOptions'] as $key => $text) {
             $fields[] = sprintf(' <label><input type="checkbox" name="%1$s[]" value="%2$s" %3$s> %4$s</label>',
@@ -104,6 +104,12 @@ class BookReviewWidget extends \WP_Widget
     protected function widgetWasSaved($instance)
     {
         return !empty($instance['widgetWasSaved']) && $instance['widgetWasSaved'] == 1;
+    }
+
+    protected function getValue($instance, $key, $default = null)
+    {
+        $default = !is_null($default) ? $default : $this->defaultValues[$key];
+        return !empty($instance[$key]) ? $instance[$key] : $default;
     }
 
     protected function getDefaultDisplayOptions()
