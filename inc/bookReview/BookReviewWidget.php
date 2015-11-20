@@ -23,6 +23,36 @@ class BookReviewWidget extends \WP_Widget
 
     public function widget($args, $instance)
     {
+        echo $args['before_widget'];
+
+        if (false !== ($title = $this->getValue($instance, 'title')) && !empty($title)) {
+            echo $args['before_title'] . apply_filters('widget_title', $title) . $args['after_title'];
+        }
+
+        $books = new \WP_Query();
+
+        $books->query(array(
+            "post_type" => BOOK_POST_TYPE,
+        ));
+
+        $li = array();
+        if ($books->have_posts()) {
+            while ($books->have_posts()) {
+                $books->the_post();
+                $bookId = get_the_ID();
+
+                $elements = array();
+                $elements[] = get_the_title($bookId);
+
+                $li[] = sprintf('<li>%s</li>', implode("\n", $elements));
+            }
+            wp_reset_query();
+        } else {
+
+        }
+
+        printf('<ul>%s</ul>', implode("\n", $li));
+        echo $args['after_widget'];
     }
 
     public function form($instance)
