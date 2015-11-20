@@ -7,6 +7,7 @@ class BookReviewWidget extends \WP_Widget
     protected $defaultValues = array(
         'title' => '',
         'sortby' => 'finished',
+        'limit' => 1,
         'sort' => 'DESC',
         'widgetWasSaved' => 1,
         'displayOptions' => array(),
@@ -29,6 +30,7 @@ class BookReviewWidget extends \WP_Widget
         printf('<input type="hidden" name="%s" value="1">', $this->get_field_name('widgetWasSaved'));
         echo $this->getTitleField($instance);
         echo $this->getSortField($instance);
+        echo $this->getLimitField($instance);
         echo $this->getDisplayOptionsField($instance);
     }
 
@@ -42,6 +44,13 @@ class BookReviewWidget extends \WP_Widget
         $title = !empty($instance['title']) ? $instance['title'] : $this->defaultValues['title'];
         return sprintf('<p><label>%2$s</label><input type="text" name="%1$s" value="%3$s" class="widefat"></p>',
             $this->get_field_name('title'), __('Title'), esc_attr($title));
+    }
+
+    protected function getLimitField($instance)
+    {
+        $limit = !empty($instance['limit']) ? $instance['limit'] : $this->defaultValues['limit'];
+        return sprintf('<p><label>%2$s</label><input type="number" min="1" step="1" name="%1$s" value="%3$s" class="widefat"></p>',
+            $this->get_field_name('limit'), __('Limit'), esc_attr($limit));
     }
 
     protected function getSortField($instance)
