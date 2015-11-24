@@ -21,8 +21,7 @@ define('BOOK_TAX_GENRE', 'book_genre');
 define('BOOK_TAX_AUTHOR', 'book_author');
 define('BOOK_TAX_PUBLISHER', 'book_publisher');
 
-require_once 'inc/bookReview/PostTypes.php';
-require_once 'inc/bookReview/BookReviewWidget.php';
+require_once 'vendor/autoload.php';
 
 add_action('init', function () {
     new bookReview\PostTypes;
@@ -32,8 +31,6 @@ register_activation_hook(__FILE__, function () {
     new bookReview\PostTypes;
     flush_rewrite_rules();
 });
-
-require_once 'inc/bookReview/Metabox.php';
 
 add_action('admin_init', function () {
     new bookReview\Metabox();

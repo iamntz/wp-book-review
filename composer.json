@@ -1,0 +1,19 @@
+{
+    "name": "iamntz/wp-book-review",
+    "type": "WP Plugin",
+    "require": {
+        "xamin/handlebars.php": "^0.10.2"
+    },
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Ionut Staicu",
+            "email": "github@iamntz.com"
+        }
+    ],
+    "autoload": {
+      "psr-4": {
+        "bookReview\\": "inc/bookReview"
+      }
+    }
+}
