@@ -23,6 +23,14 @@ define('BOOK_TAX_PUBLISHER', 'book_publisher');
 
 require_once 'vendor/autoload.php';
 
+add_filter('book-review/template/views-path', function () {
+    return __DIR__ . '/views/';
+});
+
+add_filter('book-review/template/partials-path', function () {
+    return __DIR__ . '/views/partials/';
+});
+
 add_action('init', function () {
     new bookReview\PostTypes;
 });
