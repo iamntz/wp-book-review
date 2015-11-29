@@ -2,6 +2,8 @@
 
 namespace bookReview;
 
+use \bookReview\Tpl;
+
 class Metabox
 {
     public function __construct()
@@ -27,17 +29,18 @@ class Metabox
 
     protected function addFields($post)
     {
-        $fields[] = $this->getImageUploader($post->ID);
 
-        $fields[] = sprintf('<div class="previewBookFields" style="margin-right:%dpx">', ($this->getAttachmentSizeByName($this->getPreviewSize())['width'] + 20));
         $fields[] = $this->getTextField($post->ID, '_isbn', __('ISBN'));
         $fields[] = $this->getTextField($post->ID, '_publish_year', __('Publish Year'));
         $fields[] = $this->getTextField($post->ID, '_buy_book', __('Buying Links'), true);
         $fields[] = $this->getProgress($post->ID);
         $fields[] = $this->getRating($post->ID);
-        $fields[] = '</div>';
 
-        return implode("\n", $fields);
+        return Tpl::get('metabox/previewBookFields', array(
+            'fields' => $fields,
+            'uploader' => $this->getImageUploader($post->ID),
+            'marginAdjust' => ($this->getAttachmentSizeByName($this->getPreviewSize())['width'] + 20),
+        ));
     }
 
     protected function getImageUploader($postID)
@@ -51,17 +54,14 @@ class Metabox
             $attachmentPreview = wp_get_attachment_image($value, $previewSize);
         }
 
-        $field[] = sprintf('<input type="hidden" name="_book_cover" value="%s" class="js-bookCover">', esc_attr($value));
-        $field[] = sprintf('<span class="previewBookCover js-previewBookCover" data-preview-size="%s">%s</span>', $previewSize, $attachmentPreview);
-        $field[] = sprintf('<span class="deletePreviewBookCover js-deletePreviewBookCover">&times;</span>');
-        $field[] = sprintf('<button class="button-secondary js-uploadBookCover">%s</button>', __('Upload Book Cover'));
-
-        $containerClassName = !empty($attachmentPreview) ? 'has-preview' : '';
-        return sprintf('<div class="previewBookCoverContainer js-previewBookCoverContainer %s" style="width:%dpx">%s</div>',
-            $containerClassName,
-            $this->getAttachmentSizeByName($previewSize)['width'],
-            implode("\n", $field)
-        );
+        return Tpl::get('metabox/previewBookCoverContainer', array(
+            'width' => $this->getAttachmentSizeByName($previewSize)['width'],
+            'value' => esc_attr($value),
+            'preview' => $attachmentPreview,
+            'hasPreview' => !empty($attachmentPreview),
+            'previewSize' => $previewSize,
+            'uploadAnchor' => __('Upload Book Cover'),
+        ));
     }
 
     protected function getPreviewSize()
@@ -100,25 +100,47 @@ class Metabox
 
         $options = array();
         foreach ($values as $value => $text) {
-            $options[] = sprintf('<option value="%1$s"%2$s>%3$s</option>', $value, selected($storedValue, $value, false), $text);
+            $options[] = Tpl::get('formFields/option', array(
+                'value' => $value,
+                'text' => $text,
+                'selected' => selected($storedValue, $value, false),
+            ));
         }
 
-        $field = sprintf('<select name="%1$s" id="%1$s" class="widefat">%2$s</select>', $name, implode("\n", $options));
+        $field = Tpl::get('formFields/select', array(
+            'name' => $name,
+            'id' => $name,
+            'options' => $options,
+        ));
 
-        return sprintf('<p><label for="%s">%s: %s</label></p>', $name, $label, $field);
+        return Tpl::get('formFields/fieldWrapper', array(
+            'labelFor' => $name,
+            'label' => $label,
+            'field' => $field,
+        ));
     }
 
     protected function getTextField($postID, $name, $label, $textarea = false)
     {
         $value = get_post_meta($postID, $name, true);
 
+        $tplData = array(
+            'name' => $name,
+            'id' => $name,
+            'value' => $textarea ? esc_textarea($value) : esc_attr($value),
+        );
+
         if ($textarea) {
-            $field = sprintf('<textarea name="%2$s" id="%2$s" class="widefat">%1$s</textarea>', esc_textarea($value), $name);
+            $field = Tpl::get('formFields/textarea', $tplData);
         } else {
-            $field = sprintf('<input type="text" name="%2$s" id="%2$s" value="%1$s" class="widefat">', esc_attr($value), $name);
+            $field = Tpl::get('formFields/text', $tplData);
         }
 
-        return sprintf('<p><label for="%s">%s: %s</label></p>', $name, $label, $field);
+        return Tpl::get('formFields/fieldWrapper', array(
+            'labelFor' => $name,
+            'label' => $label,
+            'field' => $field,
+        ));
     }
 
     public function saveMeta($post_id)
