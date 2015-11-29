@@ -71,45 +71,73 @@ class BookReviewWidget extends \WP_Widget
 
     protected function getTitleField($instance)
     {
-        $title = $this->getValue($instance, 'title');
-        return sprintf('<p><label>%2$s</label><input type="text" name="%1$s" value="%3$s" class="widefat"></p>',
-            $this->get_field_name('title'), __('Title'), esc_attr($title));
+        return $this->getTextField($instance, 'title', __('Titile'));
     }
 
     protected function getLimitField($instance)
     {
-        $limit = $this->getValue($instance, 'limit');
-        return sprintf('<p><label>%2$s</label><input type="number" min="1" step="1" name="%1$s" value="%3$s" class="widefat"></p>',
-            $this->get_field_name('limit'), __('Limit'), esc_attr($limit));
+        return $this->getTextField($instance, 'limit', __('Limit'), 'number', array(
+            'min' => "1",
+            'step' => "1",
+        ));
+    }
+
+    protected function getTextField($instance, $key, $label, $inputType = 'text', $extraAttrs = array())
+    {
+        $value = $this->getValue($instance, $key);
+
+        $field = Tpl::get('formFields/' . $inputType, array_merge(array(
+            'name' => $this->get_field_name($key),
+            'id' => $this->get_field_id($key),
+            'value' => esc_attr($value),
+        ), $extraAttrs));
+
+        return Tpl::get('formFields/fieldWrapper', array(
+            'labelFor' => $this->get_field_id($key),
+            'label' => $label,
+            'field' => $field,
+        ));
+    }
+
+    protected function getSelect($instance, $key, $label, $values)
+    {
+        $storedValue = $this->getValue($instance, $key);
+
+        foreach ($values as $value => $text) {
+            $options[] = Tpl::get('formFields/option', array(
+                'value' => $value,
+                'text' => $text,
+                'selected' => selected($storedValue, $value, false),
+            ));
+        }
+
+        $field = Tpl::get('formFields/select', array(
+            'name' => $this->get_field_name($key),
+            'id' => $this->get_field_id($key),
+            'options' => $options,
+        ));
+
+        return Tpl::get('formFields/fieldWrapper', array(
+            'labelFor' => $this->get_field_name($key),
+            'label' => $label,
+            'field' => $field,
+        ));
     }
 
     protected function getSortField($instance)
     {
-        $select = '';
         $sortByOptions = apply_filters('book-review/widget/sortby-options', array(
             'finished' => __('Date you\'ve finished the book'),
             'added' => __('Date you\'ve added the book'),
         ));
 
-        $sortby = $this->getValue($instance, 'sortby');
-        $select[] = sprintf('<p><label>%2$s </label><select class="widefat" name="%1$s">',
-            $this->get_field_name('sortby'), __('Sort By:'));
+        $sortOptions = array(
+            'ASC' => __('ASC'),
+            'DESC' => __('DESC'),
+        );
 
-        foreach ($sortByOptions as $value => $text) {
-            $select[] = sprintf('<option value="%s"%s>%s</option>',
-                $value, selected($value, $sortby, false), $text);
-        }
-
-        $select[] = '</select></p>';
-
-        $sort = !empty($instance['sort']) ? $instance['sort'] : $this->defaultValues['sort'];
-        $select[] = sprintf('<p><label>%2$s </label><select class="widefat" name="%1$s">',
-            $this->get_field_name('sort'), __('Sort:'));
-
-        $select[] = sprintf('<option value="ASC"%s>%s</option>', selected('ASC', $sort, false), __('ASC'));
-        $select[] = sprintf('<option value="DESC"%s>%s</option>', selected('DESC', $sort, false), __('DESC'));
-
-        $select[] = '</select></p>';
+        $select[] = $this->getSelect($instance, 'sortby', __('Sort By'), $sortByOptions);
+        $select[] = $this->getSelect($instance, 'sort', __('Sort'), $sortOptions);
 
         return implode("\n", $select);
     }
@@ -120,15 +148,18 @@ class BookReviewWidget extends \WP_Widget
         $displayOptions = $this->getValue($instance, 'displayOptions', $default);
 
         foreach ($this->defaultValues['displayOptions'] as $key => $text) {
-            $fields[] = sprintf(' <label><input type="checkbox" name="%1$s[]" value="%2$s" %3$s> %4$s</label>',
-                $this->get_field_name('displayOptions'),
-                $key,
-                in_array($key, $displayOptions) ? ' checked' : '',
-                $text
-            );
+            $fields[] = $field = Tpl::get('formFields/checkbox', array(
+                'name' => $this->get_field_name('displayOptions'),
+                'value' => $key,
+                'id' => $this->get_field_id('displayOptions'),
+                'label' => $text,
+                'checked' => in_array($key, $displayOptions),
+            ));
         }
 
-        return sprintf('<p>%s</p>', implode("<br>", $fields));
+        return Tpl::get('formFields/checkboxWrapper', array(
+            'checkboxes' => $fields
+        ));
     }
 
     protected function widgetWasSaved($instance)
